@@ -9,3 +9,9 @@ Submission materials: a 3 - 4 page report (extended from your proposal) specifyi
 
 **Final report - May 1.**
 Submission materials: a 6-10 page full report (extended from your mid-term report) & code & data
+
+## How to compile
+```
+javac -cp .:./asm-all-5.0.3.jar -g:vars -parameters *.java
+java -cp .:./asm-all-5.0.3.jar ParseClassFile TestMe.class
+```
