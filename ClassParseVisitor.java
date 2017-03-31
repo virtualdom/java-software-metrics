@@ -45,7 +45,7 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
   }*/
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-    System.out.println("Function name: " + name);
+    System.out.println("  Function name: " + name);
     ArrayList<String> modifiers = new ArrayList<String>();
     int decodeAccess = access;
 

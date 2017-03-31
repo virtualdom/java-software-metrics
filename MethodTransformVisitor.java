@@ -2,28 +2,33 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
+
 class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numParams = 0;
     int numVars = 0;
     int lineCount = 0;
     String mName;
+    ArrayList<String> params;
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
         super(ASM5, mv);
         this.mName=methodname;
+        this.params = new ArrayList<String>();
     }
 
     @Override
     public void visitParameter(String name, int access) {
+        params.add(name);
         numParams++;
         super.visitParameter(name, access);
     }
 
     @Override
     public void visitEnd() {
-        System.out.println("  Number of Arguments: " + numParams);
-        System.out.println("  Number of Var Declarations: " + numVars);
-        System.out.println("  Number of Lines: " + lineCount);
+        System.out.println("    Number of Arguments: " + numParams);
+        System.out.println("    Number of Var Declarations: " + numVars);
+        System.out.println("    Number of Lines: " + lineCount);
         super.visitEnd();
     }
 
@@ -46,7 +51,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     @Override
     public void visitLocalVariable(String name, String desc, String signature,
             Label start, Label end, int index) {
-        if (!"this".equals(name))
+        if (!"this".equals(name) && !params.contains(name))
             numVars++;
         super.visitLocalVariable(name, desc, signature, start, end, index);
     }
