@@ -12,6 +12,6 @@ Submission materials: a 6-10 page full report (extended from your mid-term repor
 
 ## How to compile
 ```
-javac -cp .:./asm-all-5.0.3.jar -g:vars -parameters *.java
+javac -cp .:./asm-all-5.0.3.jar -g:vars,lines -parameters *.java
 java -cp .:./asm-all-5.0.3.jar ParseClassFile TestMe.class
 ```
