@@ -5,6 +5,7 @@ import org.objectweb.asm.Opcodes;
 class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int lineNumber = 0;
     int numParams = 0;
+    int numVars = 0;
     String mName;
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
@@ -21,6 +22,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     @Override
     public void visitEnd() {
         System.out.println("  Number of Arguments: " + numParams);
+        System.out.println("  Number of Var Declarations: " + numVars);
         super.visitEnd();
     }
 
@@ -37,6 +39,14 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     @Override
     public void visitLineNumber(int line, Label start) {
         super.visitLineNumber(line, start);
+    }
+
+    @Override
+    public void visitLocalVariable(String name, String desc, String signature,
+            Label start, Label end, int index) {
+        if (!"this".equals(name))
+            numVars++;
+        super.visitLocalVariable(name, desc, signature, start, end, index);
     }
 
     // @Override
