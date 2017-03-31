@@ -16,7 +16,7 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
   @Override
   public void visit(int version, int access, String name, String signature,
       String superName, String[] interfaces) {
-    System.out.println(name + " extends " + superName + " {");
+    System.out.println("Analyzing class: " + name);
     super.visit(version, access, name, signature, superName, interfaces);
   }
 /*
@@ -44,12 +44,12 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
 
   public MethodVisitor visitMethod(int access, String name, String desc,
       String signature, String[] exceptions) {
-    System.out.println("    " + name + desc);
+    System.out.println("Function name: " + name);
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     return mv == null ? null : new MethodTransformVisitor(mv, name);
   }
 
   public void visitEnd() {
-    System.out.println("}");
+    System.out.println("");
   }
 }
