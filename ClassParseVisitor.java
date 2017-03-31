@@ -44,7 +44,7 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
 
   public MethodVisitor visitMethod(int access, String name, String desc,
       String signature, String[] exceptions) {
-    System.out.println("Function name: " + name);
+    System.out.println("  Function name: " + name);
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     return mv == null ? null : new MethodTransformVisitor(mv, name);
   }
