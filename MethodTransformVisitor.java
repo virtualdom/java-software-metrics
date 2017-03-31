@@ -8,6 +8,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numParams = 0;
     int numVars = 0;
     int lineCount = 0;
+    int numCasts = 0;
     String mName;
     ArrayList<String> params;
 
@@ -29,6 +30,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Arguments: " + numParams);
         System.out.println("    Number of Var Declarations: " + numVars);
         System.out.println("    Number of Lines: " + lineCount);
+        System.out.println("    Number of Casts: " + numCasts);
         super.visitEnd();
     }
 
@@ -54,6 +56,20 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         if (!"this".equals(name) && !params.contains(name))
             numVars++;
         super.visitLocalVariable(name, desc, signature, start, end, index);
+    }
+
+    @Override
+    public void visitInsn (int opcode) {
+        if (I2L <= opcode && opcode <= I2S)
+            numCasts++;
+        super.visitInsn(opcode);
+    }
+
+    @Override
+    public void visitTypeInsn(int opcode, String type) {
+        if (opcode == CHECKCAST)
+            numCasts++;
+        super.visitTypeInsn(opcode, type);
     }
 
     // @Override
