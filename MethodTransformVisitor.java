@@ -3,8 +3,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 class MethodTransformVisitor extends MethodVisitor implements Opcodes {
-    int lineNumber = 0;
     int numParams = 0;
+    int lineCount = 0;
     String mName;
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
@@ -21,6 +21,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     @Override
     public void visitEnd() {
         System.out.println("  Number of Arguments: " + numParams);
+        System.out.println("  Number of Lines: " + lineCount);
         super.visitEnd();
     }
 
@@ -36,6 +37,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     // // statement coverage collection but not working well all the time
     @Override
     public void visitLineNumber(int line, Label start) {
+        lineCount++;
         super.visitLineNumber(line, start);
     }
 
