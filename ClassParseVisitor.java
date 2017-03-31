@@ -6,6 +6,8 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.util.ArrayList;
+
 class ClassParseVisitor extends ClassVisitor implements Opcodes
 {
 
@@ -42,9 +44,51 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
     return null;
   }*/
 
-  public MethodVisitor visitMethod(int access, String name, String desc,
-      String signature, String[] exceptions) {
+  public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
     System.out.println("Function name: " + name);
+    ArrayList<String> modifiers = new ArrayList<String>();
+    int decodeAccess = access;
+
+    if (decodeAccess >= ACC_ABSTRACT) {
+      modifiers.add("abstract");
+      decodeAccess -= ACC_ABSTRACT;
+    }
+
+    if (decodeAccess >= ACC_VOLATILE) {
+      modifiers.add("volatile");
+      decodeAccess -= ACC_VOLATILE;
+    } else if (decodeAccess >= ACC_SYNCHRONIZED) {
+      modifiers.add("synchronized");
+      decodeAccess -= ACC_SYNCHRONIZED;
+    }
+
+    if (decodeAccess >= ACC_FINAL) {
+      modifiers.add("final");
+      decodeAccess -= ACC_FINAL;
+    }
+
+    if (decodeAccess >= ACC_STATIC) {
+      modifiers.add("static");
+      decodeAccess -= ACC_STATIC;
+    }
+
+    if (decodeAccess >= ACC_PROTECTED) {
+      modifiers.add("protected");
+      decodeAccess -= ACC_PROTECTED;
+    } else if (decodeAccess >= ACC_PRIVATE) {
+      modifiers.add("private");
+      decodeAccess -= ACC_PRIVATE;
+    } else if (decodeAccess >= ACC_PUBLIC) {
+      modifiers.add("public");
+      decodeAccess -= ACC_PUBLIC;
+    }
+
+    System.out.print("    Modifiers: ");
+    for (String modifier: modifiers) {
+        System.out.print(modifier + " ");
+    }
+    System.out.print("\n");
+
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     return mv == null ? null : new MethodTransformVisitor(mv, name);
   }
