@@ -89,6 +89,12 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
     }
     System.out.print("\n");
 
+    if (exceptions != null) {
+      System.out.print("    Exceptions thrown: ");
+      for (int i = 0; i < exceptions.length; i++) System.out.print(exceptions[i] + " ");
+      System.out.print("\n");
+  }
+
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     return mv == null ? null : new MethodTransformVisitor(mv, name);
   }
