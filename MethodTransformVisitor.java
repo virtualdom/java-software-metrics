@@ -3,6 +3,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numParams = 0;
@@ -11,11 +12,13 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numCasts = 0;
     String mName;
     ArrayList<String> params;
+    HashSet<String> exceptions;
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
         super(ASM5, mv);
         this.mName=methodname;
         this.params = new ArrayList<String>();
+        this.exceptions = new HashSet<String>();
     }
 
     @Override
@@ -31,6 +34,12 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Var Declarations: " + numVars);
         System.out.println("    Number of Lines: " + lineCount);
         System.out.println("    Number of Casts: " + numCasts);
+
+        System.out.print("    Exceptions referenced: ");
+        for(String exception:exceptions)
+            System.out.print(exception + " ");
+        System.out.print("\n");
+
         super.visitEnd();
     }
 
@@ -70,6 +79,12 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         if (opcode == CHECKCAST)
             numCasts++;
         super.visitTypeInsn(opcode, type);
+    }
+
+    @Override
+    public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+        exceptions.add(type);
+        super.visitTryCatchBlock(start, end, handler, type);
     }
 
     // @Override
