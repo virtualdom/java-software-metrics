@@ -12,13 +12,16 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numVars = 0;
     int lineCount = 0;
     int numCasts = 0;
+    int numLoops = 0;
     String mName;
+    HashSet<Label> labelsVisited;
     ArrayList<String> params;
     HashSet<String> exceptions;
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
         super(ASM5, mv);
         this.mName=methodname;
+        this.labelsVisited = new HashSet<Label>();
         this.params = new ArrayList<String>();
         this.exceptions = new HashSet<String>();
     }
@@ -37,6 +40,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Lines: " + lineCount);
         System.out.println("    Number of Arith/Bitwise Operators: " + numOperators);
         System.out.println("    Number of Arith/Bitwise Operands: " + numOperands);
+        System.out.println("    Number of Loops: " + numLoops);
         System.out.println("    Number of Casts: " + numCasts);
 
         System.out.print("    Exceptions referenced: ");
@@ -107,13 +111,15 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
        super.visitIincInsn(var , increment);
     }
 
-    // @Override
-    // public void visitLabel(Label l) {
-    //     if (lineNumber != 0) {
-    //         mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-    //         mv.visitLdcInsn("line " + lineNumber + " executed");
-    //         mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-    //         super.visitLabel(l);
-    //     }
-    // }
+    @Override
+    public void visitJumpInsn(int opcode, Label label) {
+        if (labelsVisited.contains(label)) numLoops++;
+        super.visitJumpInsn(opcode, label);
+    }
+
+    @Override
+    public void visitLabel(Label l) {
+        labelsVisited.add(l);
+        super.visitLabel(l);
+    }
 }
