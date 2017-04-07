@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 class MethodTransformVisitor extends MethodVisitor implements Opcodes {
+    int numOperands = 0;
+    int numOperators = 0;
     int numParams = 0;
     int numVars = 0;
     int lineCount = 0;
@@ -33,6 +35,8 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Arguments: " + numParams);
         System.out.println("    Number of Var Declarations: " + numVars);
         System.out.println("    Number of Lines: " + lineCount);
+        System.out.println("    Number of Arith/Bitwise Operators: " + numOperators);
+        System.out.println("    Number of Arith/Bitwise Operands: " + numOperands);
         System.out.println("    Number of Casts: " + numCasts);
 
         System.out.print("    Exceptions referenced: ");
@@ -69,7 +73,16 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
 
     @Override
     public void visitInsn (int opcode) {
-        if (I2L <= opcode && opcode <= I2S)
+        if (opcode == IADD || opcode == ISUB ||
+            opcode == IMUL || opcode == IDIV || opcode == IREM ||
+            opcode == IOR || opcode == IAND || opcode == IXOR ||
+            opcode == ISHR || opcode == ISHL || opcode == IUSHR) {
+            numOperands += 2;
+            numOperators++;
+        } else if (opcode == INEG) {
+            numOperators++;
+            numOperands++;
+        }else if (I2L <= opcode && opcode <= I2S)
             numCasts++;
         super.visitInsn(opcode);
     }
@@ -85,6 +98,13 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
         exceptions.add(type);
         super.visitTryCatchBlock(start, end, handler, type);
+    }
+
+    @Override
+    public void visitIincInsn(int var, int increment){
+       numOperators++;
+       numOperands += increment == 1 || increment == -1 ? 1 : 2;
+       super.visitIincInsn(var , increment);
     }
 
     // @Override
