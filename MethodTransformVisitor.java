@@ -4,6 +4,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HashMap;
 
 class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numOperands = 0;
@@ -12,12 +13,16 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numVars = 0;
     int lineCount = 0;
     int numCasts = 0;
+    int numLoops = 0;
+  	int numRefVar = 0;
     String mName;
     String className;
     ArrayList<String> params;
     HashSet<String> exceptions;
     HashSet<String> localMethodsCalled;
     HashSet<String> exterMethodsCalled;
+    HashSet<Label> labelsVisited;
+    HashMap<Integer, Integer> varReferences;
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname, String className) {
         super(ASM5, mv);
@@ -27,6 +32,8 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         this.exceptions = new HashSet<String>();
         this.localMethodsCalled = new HashSet<String>();
         this.exterMethodsCalled = new HashSet<String>();
+        this.labelsVisited = new HashSet<Label>();
+        this.varReferences = new HashMap<Integer, Integer>();
     }
 
     @Override
@@ -43,7 +50,9 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Lines: " + lineCount);
         System.out.println("    Number of Arith/Bitwise Operators: " + numOperators);
         System.out.println("    Number of Arith/Bitwise Operands: " + numOperands);
+        System.out.println("    Number of Loops: " + numLoops);
         System.out.println("    Number of Casts: " + numCasts);
+		    System.out.println("    Number of Var References: " + varReferences.size());
 
         System.out.println("    Local Method invocations: " + (localMethodsCalled.isEmpty() ? "None" : ""));
         for (String method:localMethodsCalled)
@@ -114,6 +123,29 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         exceptions.add(type);
         super.visitTryCatchBlock(start, end, handler, type);
     }
+	@Override
+	public void visitIincInsn(int var, int increment){
+		if(varReferences.containsKey(var))
+		{
+			varReferences.put(var , varReferences.get(var) + 1);
+		}
+		else{
+			varReferences.put(var , 1);
+		}
+		
+		super.visitIincInsn(var , increment);
+	}
+	@Override
+	public void visitVarInsn(int opcode, int var){
+		if(varReferences.containsKey(var))
+		{
+			varReferences.put(var , varReferences.get(var) + 1);
+		}
+		else{
+			varReferences.put(var , 1);
+		}
+		super.visitVarInsn(opcode , var);
+	}
 
     @Override
     public void visitIincInsn(int var, int increment){
@@ -129,13 +161,15 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
 
-    // @Override
-    // public void visitLabel(Label l) {
-    //     if (lineNumber != 0) {
-    //         mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-    //         mv.visitLdcInsn("line " + lineNumber + " executed");
-    //         mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-    //         super.visitLabel(l);
-    //     }
-    // }
+    @Override
+    public void visitJumpInsn(int opcode, Label label) {
+        if (labelsVisited.contains(label)) numLoops++;
+        super.visitJumpInsn(opcode, label);
+    }
+
+    @Override
+    public void visitLabel(Label l) {
+        labelsVisited.add(l);
+        super.visitLabel(l);
+    }
 }
