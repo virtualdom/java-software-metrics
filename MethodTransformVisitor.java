@@ -11,10 +11,12 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numVars = 0;
     int lineCount = 0;
     int numCasts = 0;
+	int numRefVar = 0;
     String mName;
     ArrayList<String> params;
     HashSet<String> exceptions;
 	HashMap<Integer, Integer> varReferences;
+	
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
         super(ASM5, mv);
@@ -22,6 +24,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         this.params = new ArrayList<String>();
         this.exceptions = new HashSet<String>();
 		this.varReferences = new HashMap<Integer, Integer>();
+		
     }
 
     @Override
@@ -37,6 +40,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Var Declarations: " + numVars);
         System.out.println("    Number of Lines: " + lineCount);
         System.out.println("    Number of Casts: " + numCasts);
+		System.out.println("    Number of Var References: " + varReferences.size());
 
         System.out.print("    Exceptions referenced: ");
         for(String exception:exceptions)
@@ -98,6 +102,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
 		else{
 			varReferences.put(var , 1);
 		}
+		
 		super.visitIincInsn(var , increment);
 	}
 	@Override
