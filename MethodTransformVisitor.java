@@ -4,6 +4,7 @@ import org.objectweb.asm.Opcodes;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.HashMap;
 
 class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numOperands = 0;
@@ -13,10 +14,13 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int lineCount = 0;
     int numCasts = 0;
     int numLoops = 0;
+  	int numRefVar = 0;
     String mName;
     HashSet<Label> labelsVisited;
     ArrayList<String> params;
     HashSet<String> exceptions;
+	HashMap<Integer, Integer> varReferences;
+	
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
         super(ASM5, mv);
@@ -24,6 +28,8 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         this.labelsVisited = new HashSet<Label>();
         this.params = new ArrayList<String>();
         this.exceptions = new HashSet<String>();
+		this.varReferences = new HashMap<Integer, Integer>();
+		
     }
 
     @Override
@@ -42,6 +48,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Arith/Bitwise Operands: " + numOperands);
         System.out.println("    Number of Loops: " + numLoops);
         System.out.println("    Number of Casts: " + numCasts);
+		    System.out.println("    Number of Var References: " + varReferences.size());
 
         System.out.print("    Exceptions referenced: ");
         for(String exception:exceptions)
@@ -103,6 +110,29 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         exceptions.add(type);
         super.visitTryCatchBlock(start, end, handler, type);
     }
+	@Override
+	public void visitIincInsn(int var, int increment){
+		if(varReferences.containsKey(var))
+		{
+			varReferences.put(var , varReferences.get(var) + 1);
+		}
+		else{
+			varReferences.put(var , 1);
+		}
+		
+		super.visitIincInsn(var , increment);
+	}
+	@Override
+	public void visitVarInsn(int opcode, int var){
+		if(varReferences.containsKey(var))
+		{
+			varReferences.put(var , varReferences.get(var) + 1);
+		}
+		else{
+			varReferences.put(var , 1);
+		}
+		super.visitVarInsn(opcode , var);
+	}
 
     @Override
     public void visitIincInsn(int var, int increment){
