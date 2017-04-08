@@ -16,20 +16,24 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numLoops = 0;
   	int numRefVar = 0;
     String mName;
-    HashSet<Label> labelsVisited;
+    String className;
     ArrayList<String> params;
     HashSet<String> exceptions;
-	HashMap<Integer, Integer> varReferences;
-	
+    HashSet<String> localMethodsCalled;
+    HashSet<String> exterMethodsCalled;
+    HashSet<Label> labelsVisited;
+    HashMap<Integer, Integer> varReferences;
 
-    public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
+    public MethodTransformVisitor(final MethodVisitor mv, String methodname, String className) {
         super(ASM5, mv);
         this.mName=methodname;
-        this.labelsVisited = new HashSet<Label>();
+        this.className = className;
         this.params = new ArrayList<String>();
         this.exceptions = new HashSet<String>();
-		this.varReferences = new HashMap<Integer, Integer>();
-		
+        this.localMethodsCalled = new HashSet<String>();
+        this.exterMethodsCalled = new HashSet<String>();
+        this.labelsVisited = new HashSet<Label>();
+        this.varReferences = new HashMap<Integer, Integer>();
     }
 
     @Override
@@ -49,6 +53,15 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Loops: " + numLoops);
         System.out.println("    Number of Casts: " + numCasts);
 		    System.out.println("    Number of Var References: " + varReferences.size());
+
+        System.out.println("    Local Method invocations: " + (localMethodsCalled.isEmpty() ? "None" : ""));
+        for (String method:localMethodsCalled)
+            System.out.println("      " + method);
+
+        System.out.println("    External Method invocations: " + (exterMethodsCalled.isEmpty() ? "None" : ""));
+        for (String method:exterMethodsCalled)
+            System.out.println("      " + method);
+
 
         System.out.print("    Exceptions referenced: ");
         for(String exception:exceptions)
@@ -139,6 +152,13 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
        numOperators++;
        numOperands += increment == 1 || increment == -1 ? 1 : 2;
        super.visitIincInsn(var , increment);
+    }
+
+    @Override
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+        if (className.equals(owner)) localMethodsCalled.add(name + desc);
+        else exterMethodsCalled.add(owner + "/" + name + desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
 
     @Override
