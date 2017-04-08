@@ -14,7 +14,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int lineCount = 0;
     int numCasts = 0;
     int numLoops = 0;
-  	int numRefVar = 0;
+    int numRefVar = 0;
     String mName;
     String className;
     ArrayList<String> params;
@@ -52,7 +52,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Arith/Bitwise Operands: " + numOperands);
         System.out.println("    Number of Loops: " + numLoops);
         System.out.println("    Number of Casts: " + numCasts);
-		    System.out.println("    Number of Var References: " + varReferences.size());
+        System.out.println("    Number of Var References: " + varReferences.size());
 
         System.out.println("    Local Method invocations: " + (localMethodsCalled.isEmpty() ? "None" : ""));
         for (String method:localMethodsCalled)
@@ -71,16 +71,6 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         super.visitEnd();
     }
 
-    // // method coverage collection
-    // @Override
-    // public void visitCode(){
-    //     mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-    //     mv.visitLdcInsn("function " + mName + " executed");
-    //     mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false);
-    //     super.visitCode();
-    // }
-
-    // // statement coverage collection but not working well all the time
     @Override
     public void visitLineNumber(int line, Label start) {
         lineCount++;
@@ -123,35 +113,31 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         exceptions.add(type);
         super.visitTryCatchBlock(start, end, handler, type);
     }
-	@Override
-	public void visitIincInsn(int var, int increment){
-		if(varReferences.containsKey(var))
-		{
-			varReferences.put(var , varReferences.get(var) + 1);
-		}
-		else{
-			varReferences.put(var , 1);
-		}
-		
-		super.visitIincInsn(var , increment);
-	}
-	@Override
-	public void visitVarInsn(int opcode, int var){
-		if(varReferences.containsKey(var))
-		{
-			varReferences.put(var , varReferences.get(var) + 1);
-		}
-		else{
-			varReferences.put(var , 1);
-		}
-		super.visitVarInsn(opcode , var);
-	}
+    @Override
+    public void visitIincInsn(int var, int increment) {
+        numOperators++;
+        numOperands += increment == 1 || increment == -1 ? 1 : 2;
+
+        if(varReferences.containsKey(var))
+        {
+            varReferences.put(var , varReferences.get(var) + 1);
+        }
+        else{
+            varReferences.put(var , 1);
+        }
+
+        super.visitIincInsn(var , increment);
+    }
 
     @Override
-    public void visitIincInsn(int var, int increment){
-       numOperators++;
-       numOperands += increment == 1 || increment == -1 ? 1 : 2;
-       super.visitIincInsn(var , increment);
+    public void visitVarInsn(int opcode, int var) {
+        if(varReferences.containsKey(var)) {
+            varReferences.put(var , varReferences.get(var) + 1);
+        }
+        else {
+            varReferences.put(var , 1);
+        }
+        super.visitVarInsn(opcode , var);
     }
 
     @Override
