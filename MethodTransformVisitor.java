@@ -13,14 +13,20 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int lineCount = 0;
     int numCasts = 0;
     String mName;
+    String className;
     ArrayList<String> params;
     HashSet<String> exceptions;
+    HashSet<String> localMethodsCalled;
+    HashSet<String> exterMethodsCalled;
 
-    public MethodTransformVisitor(final MethodVisitor mv, String methodname) {
+    public MethodTransformVisitor(final MethodVisitor mv, String methodname, String className) {
         super(ASM5, mv);
         this.mName=methodname;
+        this.className = className;
         this.params = new ArrayList<String>();
         this.exceptions = new HashSet<String>();
+        this.localMethodsCalled = new HashSet<String>();
+        this.exterMethodsCalled = new HashSet<String>();
     }
 
     @Override
@@ -38,6 +44,15 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    Number of Arith/Bitwise Operators: " + numOperators);
         System.out.println("    Number of Arith/Bitwise Operands: " + numOperands);
         System.out.println("    Number of Casts: " + numCasts);
+
+        System.out.println("    Local Method invocations: " + (localMethodsCalled.isEmpty() ? "None" : ""));
+        for (String method:localMethodsCalled)
+            System.out.println("      " + method);
+
+        System.out.println("    External Method invocations: " + (exterMethodsCalled.isEmpty() ? "None" : ""));
+        for (String method:exterMethodsCalled)
+            System.out.println("      " + method);
+
 
         System.out.print("    Exceptions referenced: ");
         for(String exception:exceptions)
@@ -105,6 +120,13 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
        numOperators++;
        numOperands += increment == 1 || increment == -1 ? 1 : 2;
        super.visitIincInsn(var , increment);
+    }
+
+    @Override
+    public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
+        if (className.equals(owner)) localMethodsCalled.add(name + desc);
+        else exterMethodsCalled.add(owner + "/" + name + desc);
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
     }
 
     // @Override

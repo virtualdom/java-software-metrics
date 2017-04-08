@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 class ClassParseVisitor extends ClassVisitor implements Opcodes
 {
-
+  String className;
   public ClassParseVisitor() {
     super(ASM5, new ClassWriter(ClassWriter.COMPUTE_FRAMES));
   }
@@ -18,6 +18,7 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
   @Override
   public void visit(int version, int access, String name, String signature,
       String superName, String[] interfaces) {
+    this.className = name;
     System.out.println("Analyzing class: " + name);
     super.visit(version, access, name, signature, superName, interfaces);
   }
@@ -96,7 +97,7 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
   }
 
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-    return mv == null ? null : new MethodTransformVisitor(mv, name);
+    return mv == null ? null : new MethodTransformVisitor(mv, name, className);
   }
 
   public void visitEnd() {
