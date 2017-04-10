@@ -48,20 +48,20 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
 
     @Override
     public void visitEnd() {
-        System.out.println("    Number of Arguments: " + numParams);
-        System.out.println("    Number of Var Declarations: " + numVars);
-        System.out.println("    Number of Lines: " + lineCount);
-        System.out.println("    Number of Arith/Bitwise Operators: " + numOperators);
-        System.out.println("    Number of Arith/Bitwise Operands: " + numOperands);
-        System.out.println("    Halstead LTH (Arith/Bitwise)     : " + LTH());
-        System.out.println("    Halstead VOC (Arith/Bitwise)     : " + VOC());
-        System.out.println("    Halstead DIF (Arith/Bitwise)     : " + DIF());
-        System.out.println("    Halstead VOL (Arith/Bitwise)     : " + VOL());
-        System.out.println("    Halstead EFF (Arith/Bitwise)     : " + EFF());
-        System.out.println("    Halstead BUG (Arith/Bitwise)     : " + VOL()/3000.0);
-        System.out.println("    Number of Loops: " + numLoops);
-        System.out.println("    Number of Casts: " + numCasts);
-        System.out.println("    Number of Var References: " + varReferences.size());
+        System.out.println("    No. of Arguments:                " + numParams);
+        System.out.println("    No. of Var Declarations:         " + numVars);
+        System.out.println("    No. of Lines:                    " + lineCount);
+        System.out.println("    No. of Arith/Bitwise Operators:  " + numOperators);
+        System.out.println("    No. of Arith/Bitwise Operands:   " + numOperands);
+        System.out.println("    Halstead LTH (Arith/Bitwise):    " + LTH());
+        System.out.println("    Halstead VOC (Arith/Bitwise):    " + VOC());
+        System.out.println("    Halstead DIF (Arith/Bitwise):    " + DIF());
+        System.out.println("    Halstead VOL (Arith/Bitwise):    " + VOL());
+        System.out.println("    Halstead EFF (Arith/Bitwise):    " + EFF());
+        System.out.println("    Halstead BUG (Arith/Bitwise):    " + VOL()/3000.0);
+        System.out.println("    No. of Loops:                    " + numLoops);
+        System.out.println("    No. of Casts:                    " + numCasts);
+        System.out.println("    No. of Variables Referenced:     " + varReferences.size());
 
         System.out.println("    Local Method invocations: " + (localMethodsCalled.isEmpty() ? "None" : ""));
         for (String method:localMethodsCalled)
