@@ -2,6 +2,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     HashSet<String> localMethodsCalled;
     HashSet<String> exterMethodsCalled;
     HashSet<Label> labelsVisited;
+    HashSet<Integer> operators;
     HashMap<Integer, Integer> varReferences;
 
     public MethodTransformVisitor(final MethodVisitor mv, String methodname, String className) {
@@ -33,6 +35,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         this.localMethodsCalled = new HashSet<String>();
         this.exterMethodsCalled = new HashSet<String>();
         this.labelsVisited = new HashSet<Label>();
+        this.operators = new HashSet<Integer>();
         this.varReferences = new HashMap<Integer, Integer>();
     }
 
@@ -50,6 +53,12 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("    No. of Lines:                    " + lineCount);
         System.out.println("    No. of Arith/Bitwise Operators:  " + numOperators);
         System.out.println("    No. of Arith/Bitwise Operands:   " + numOperands);
+        System.out.println("    Halstead LTH (Arith/Bitwise):    " + LTH());
+        System.out.println("    Halstead VOC (Arith/Bitwise):    " + VOC());
+        System.out.println("    Halstead DIF (Arith/Bitwise):    " + DIF());
+        System.out.println("    Halstead VOL (Arith/Bitwise):    " + VOL());
+        System.out.println("    Halstead EFF (Arith/Bitwise):    " + EFF());
+        System.out.println("    Halstead BUG (Arith/Bitwise):    " + VOL()/3000.0);
         System.out.println("    No. of Loops:                    " + numLoops);
         System.out.println("    No. of Casts:                    " + numCasts);
         System.out.println("    No. of Variables Referenced:     " + varReferences.size());
@@ -70,6 +79,12 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
 
         super.visitEnd();
     }
+
+    public double LTH () { return numOperands + numOperators; }
+    public double VOC () { return operators.size() + varReferences.size(); }
+    public double DIF () { return operators.size()/2.0 * (double)numOperands/varReferences.size(); }
+    public double VOL () { return LTH() * (Math.log(VOC())/Math.log(2)); }
+    public double EFF () { return DIF() * VOL(); }
 
     @Override
     public void visitLineNumber(int line, Label start) {
@@ -93,9 +108,11 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
             opcode == ISHR || opcode == ISHL || opcode == IUSHR) {
             numOperands += 2;
             numOperators++;
+            operators.add(opcode);
         } else if (opcode == INEG) {
             numOperators++;
             numOperands++;
+            operators.add(opcode);
         }else if (I2L <= opcode && opcode <= I2S)
             numCasts++;
         super.visitInsn(opcode);
@@ -116,6 +133,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     @Override
     public void visitIincInsn(int var, int increment) {
         numOperators++;
+        operators.add(-1);
         numOperands += increment == 1 || increment == -1 ? 1 : 2;
 
         if(varReferences.containsKey(var))
