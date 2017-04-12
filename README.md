@@ -18,3 +18,12 @@ Submission materials: a 6-10 page full report (extended from your mid-term repor
 javac -cp .:./asm-all-5.0.3.jar -g:vars,lines -parameters *.java
 java -cp .:./asm-all-5.0.3.jar ParseClassFile TestMe.class
 ```
+
+## How to produce and execute JAR
+```
+jar cvfm Software-Metrics.jar manifest.txt ClassParseVisitor.class MethodTransformVisitor.class ParseClassFile.class asm-all-5.0.3.jar
+
+# Now move Software-Metrics.jar and asm-all-5.0.3.jar to where you'd like to execute it
+
+ls *class | xargs -n 1 java -jar Software-Metrics.jar
+```
