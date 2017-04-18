@@ -19,6 +19,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     String mName;
     String className;
     ArrayList<String> params;
+    HashSet<String> classReferenced;
     HashSet<String> exceptions;
     HashSet<String> localMethodsCalled;
     HashSet<String> exterMethodsCalled;
@@ -31,6 +32,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         this.mName=methodname;
         this.className = className;
         this.params = new ArrayList<String>();
+        this.classReferenced = new HashSet<String>();
         this.exceptions = new HashSet<String>();
         this.localMethodsCalled = new HashSet<String>();
         this.exterMethodsCalled = new HashSet<String>();
@@ -77,6 +79,11 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
             System.out.print(exception + " ");
         System.out.print("\n");
 
+        System.out.print("    Classes Referenced: ");
+        for(String desc:classReferenced)
+            System.out.print(desc + " ");
+        System.out.print("\n");
+
         super.visitEnd();
     }
 
@@ -97,6 +104,15 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
             Label start, Label end, int index) {
         if (!"this".equals(name) && !params.contains(name))
             numVars++;
+        for(int i = 0 ; i < desc.length() ; i++){
+            if(desc.charAt(i) == '[')
+                continue;
+            if(desc.charAt(i) == 'L'){
+                classReferenced.add(desc);
+                break;
+            }
+            break;
+        }
         super.visitLocalVariable(name, desc, signature, start, end, index);
     }
 
