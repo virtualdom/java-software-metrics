@@ -11,6 +11,7 @@ import java.util.ArrayList;
 class ClassParseVisitor extends ClassVisitor implements Opcodes
 {
   String className;
+  boolean atLeastOne = false;
   public ClassParseVisitor() {
     super(ASM5, new ClassWriter(ClassWriter.COMPUTE_FRAMES));
   }
@@ -18,35 +19,19 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
   @Override
   public void visit(int version, int access, String name, String signature,
       String superName, String[] interfaces) {
+    atLeastOne = false;
     this.className = name;
-    System.out.println("Analyzing class: " + name);
+    System.out.println("{");
+    System.out.println("  \"name\": \"" + name + "\",");
+    System.out.println("  \"methods\": [");
     super.visit(version, access, name, signature, superName, interfaces);
   }
-/*
-  public void visitSource(String source, String debug) {
-  }
-
-  public void visitOuterClass(String owner, String name, String desc) {
-  }
-
-  public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-    return null;
-  }
-
-  public void visitAttribute(Attribute attr) {
-  }
-
-  public void visitInnerClass(String name, String outerName, String innerName,
-      int access) {
-  }
-
-  public FieldVisitor visitField(int access, String name, String desc,
-      String signature, Object value) {
-    return null;
-  }*/
 
   public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-    System.out.println("  Function name: " + name);
+    if(atLeastOne) System.out.print(", {\n");
+    else System.out.println("    {");
+    atLeastOne = true;
+    System.out.println("      \"name\": \"" + name +"\",");
     ArrayList<String> modifiers = new ArrayList<String>();
     int decodeAccess = access;
 
@@ -84,23 +69,29 @@ class ClassParseVisitor extends ClassVisitor implements Opcodes
       decodeAccess -= ACC_PUBLIC;
     }
 
-    System.out.print("    Modifiers: ");
-    for (String modifier: modifiers) {
-        System.out.print(modifier + " ");
-    }
-    System.out.print("\n");
+    System.out.print("      \"modifiers\": [");
 
+    for (int i = 0; i < modifiers.size() - 1; i++) {
+        System.out.print("\"" + modifiers.get(i) + "\", ");
+    }
+    if (modifiers.size() > 0) System.out.print("\"" + modifiers.get(modifiers.size() - 1) + "\"");
+    System.out.print("],\n");
+
+    System.out.print("      \"exceptions_thrown\": [");
     if (exceptions != null) {
-      System.out.print("    Exceptions thrown: ");
-      for (int i = 0; i < exceptions.length; i++) System.out.print(exceptions[i] + " ");
-      System.out.print("\n");
-  }
+      for (int i = 0; i < exceptions.length - 1; i++)
+        System.out.print("\"" + exceptions[i] + "\", ");
+
+      if (exceptions.length > 0) System.out.print("\"" + exceptions[exceptions.length - 1] + "\"");
+    }
+    System.out.print("],\n");
 
     MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
     return mv == null ? null : new MethodTransformVisitor(mv, name, className);
   }
 
   public void visitEnd() {
-    System.out.println("");
+    System.out.println("\n  ]");
+    System.out.println("}");
   }
 }

@@ -50,39 +50,62 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
 
     @Override
     public void visitEnd() {
-        System.out.println("    No. of Arguments:                " + numParams);
-        System.out.println("    No. of Var Declarations:         " + numVars);
-        System.out.println("    No. of Lines:                    " + lineCount);
-        System.out.println("    No. of Arith/Bitwise Operators:  " + numOperators);
-        System.out.println("    No. of Arith/Bitwise Operands:   " + numOperands);
-        System.out.println("    Halstead LTH (Arith/Bitwise):    " + LTH());
-        System.out.println("    Halstead VOC (Arith/Bitwise):    " + VOC());
-        System.out.println("    Halstead DIF (Arith/Bitwise):    " + DIF());
-        System.out.println("    Halstead VOL (Arith/Bitwise):    " + VOL());
-        System.out.println("    Halstead EFF (Arith/Bitwise):    " + EFF());
-        System.out.println("    Halstead BUG (Arith/Bitwise):    " + VOL()/3000.0);
-        System.out.println("    No. of Loops:                    " + numLoops);
-        System.out.println("    No. of Casts:                    " + numCasts);
-        System.out.println("    No. of Variables Referenced:     " + varReferences.size());
+        System.out.println("      \"arguments\": " + numParams + ",");            // Number of arguments
+        System.out.println("      \"declarations\": " + numVars + ",");           // Number of declarations
+        System.out.println("      \"lines\": " + lineCount + ",");                // Number of lines
+        System.out.println("      \"operators\": " + numOperators + ",");         // Number of operators
+        System.out.println("      \"operands\": " + numOperands + ",");           // Number of operands
+        System.out.println("      \"lth\": " + LTH() + ",");                      // Halstead LTH
+        System.out.println("      \"voc\": " + VOC() + ",");                      // Halstead VOC
+        System.out.println("      \"dif\": " + DIF() + ",");                      // Halstead DIF
+        System.out.println("      \"vol\": " + VOL() + ",");                      // Halstead VOL
+        System.out.println("      \"eff\": " + EFF() + ",");                      // Halstead EFF
+        System.out.println("      \"bug\": " + VOL()/3000.0 + ",");               // Halstead BUG
+        System.out.println("      \"loops\": " + numLoops + ",");                 // Number of loops
+        System.out.println("      \"casts\": " + numCasts + ",");                 // Number of casts
+        System.out.println("      \"var_refs\": " + varReferences.size() + ",");  // Number of variable references
 
-        System.out.println("    Local Method invocations: " + (localMethodsCalled.isEmpty() ? "None" : ""));
-        for (String method:localMethodsCalled)
-            System.out.println("      " + method);
+        System.out.print("      \"local_methods_invoked\": [");
+        boolean atLeastOne = false;
+        for (String method:localMethodsCalled) {
+            if (atLeastOne)
+                System.out.print(", ");
+            System.out.print("\"" + method+ "\"");
+            atLeastOne = true;
+        }
+        System.out.print("],\n");
 
-        System.out.println("    External Method invocations: " + (exterMethodsCalled.isEmpty() ? "None" : ""));
-        for (String method:exterMethodsCalled)
-            System.out.println("      " + method);
+        System.out.print("      \"external_methods_invoked\": [");
+        atLeastOne = false;
+        for (String method:exterMethodsCalled) {
+            if (atLeastOne)
+                System.out.print(", ");
+            System.out.print("\"" + method+ "\"");
+            atLeastOne = true;
+        }
+        System.out.print("],\n");
 
+        System.out.print("      \"exception_refs\": [");
+        atLeastOne = false;
+        for (String exception:exceptions) {
+            if (atLeastOne)
+                System.out.print(", ");
+            System.out.print("\"" + exception+ "\"");
+            atLeastOne = true;
+        }
+        System.out.print("],\n");
 
-        System.out.print("    Exceptions referenced: ");
-        for(String exception:exceptions)
-            System.out.print(exception + " ");
-        System.out.print("\n");
+        System.out.print("      \"class_refs\": [");
+        atLeastOne = false;
+        for (String classRef:classReferenced) {
+            if (atLeastOne)
+                System.out.print(", ");
+            System.out.print("\"" + classRef + "\"");
+            atLeastOne = true;
+        }
+        System.out.print("]\n");
+        System.out.print("    }");
 
-        System.out.print("    Classes Referenced: ");
-        for(String desc:classReferenced)
-            System.out.print(desc + " ");
-        System.out.print("\n");
 
         super.visitEnd();
     }
@@ -100,8 +123,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     }
 
     @Override
-    public void visitLocalVariable(String name, String desc, String signature,
-            Label start, Label end, int index) {
+    public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
         if (!"this".equals(name) && !params.contains(name))
             numVars++;
         for(int i = 0 ; i < desc.length() ; i++){
@@ -121,11 +143,20 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         if (opcode == IADD || opcode == ISUB ||
             opcode == IMUL || opcode == IDIV || opcode == IREM ||
             opcode == IOR || opcode == IAND || opcode == IXOR ||
-            opcode == ISHR || opcode == ISHL || opcode == IUSHR) {
+            opcode == ISHR || opcode == ISHL || opcode == IUSHR ||
+            opcode == DDIV || opcode == LADD || opcode == FADD ||
+            opcode == DADD || opcode == LSUB || opcode == FSUB ||
+            opcode == DSUB || opcode == LMUL || opcode == FMUL ||
+            opcode == DMUL || opcode == LDIV || opcode == FDIV ||
+            opcode == DDIV || opcode == LREM || opcode == FREM ||
+            opcode == DREM || opcode == LSHL || opcode == LSHR ||
+            opcode == LUSHR || opcode == LAND || opcode == LOR ||
+            opcode == LXOR) {
             numOperands += 2;
             numOperators++;
             operators.add(opcode);
-        } else if (opcode == INEG) {
+        } else if (opcode == LNEG || opcode == FNEG ||
+            opcode == DNEG || opcode == INEG) {
             numOperators++;
             numOperands++;
             operators.add(opcode);
