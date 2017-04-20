@@ -16,6 +16,9 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     int numCasts = 0;
     int numLoops = 0;
     int numRefVar = 0;
+    int lastJumpLineCount = 0;
+    int nodes = 1;
+    int edges = 0;
     String mName;
     String className;
     ArrayList<String> params;
@@ -24,6 +27,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     HashSet<String> localMethodsCalled;
     HashSet<String> exterMethodsCalled;
     HashSet<Label> labelsVisited;
+    HashSet<Label> nodeSet;
     HashSet<Integer> operators;
     HashMap<Integer, Integer> varReferences;
 
@@ -37,6 +41,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         this.localMethodsCalled = new HashSet<String>();
         this.exterMethodsCalled = new HashSet<String>();
         this.labelsVisited = new HashSet<Label>();
+        this.nodeSet = new HashSet<Label>();
         this.operators = new HashSet<Integer>();
         this.varReferences = new HashMap<Integer, Integer>();
     }
@@ -61,6 +66,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("      \"vol\": " + VOL() + ",");                      // Halstead VOL
         System.out.println("      \"eff\": " + EFF() + ",");                      // Halstead EFF
         System.out.println("      \"bug\": " + VOL()/3000.0 + ",");               // Halstead BUG
+        System.out.println("      \"complexity\": " + (edges - nodes + 2) + ","); // McCabes cyclomatic Complexity
         System.out.println("      \"loops\": " + numLoops + ",");                 // Number of loops
         System.out.println("      \"casts\": " + numCasts + ",");                 // Number of casts
         System.out.println("      \"var_refs\": " + varReferences.size() + ",");  // Number of variable references
@@ -105,7 +111,6 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         }
         System.out.print("]\n");
         System.out.print("    }");
-
 
         super.visitEnd();
     }
@@ -215,12 +220,46 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
     @Override
     public void visitJumpInsn(int opcode, Label label) {
         if (labelsVisited.contains(label)) numLoops++;
+
+        if (opcode == IFEQ || opcode == IFNE || opcode == IFLT ||
+            opcode == IFGE || opcode == IFGT || opcode == IFLE ||
+            opcode == IF_ICMPEQ || opcode == IF_ICMPNE ||
+            opcode == IF_ICMPLT || opcode == IF_ICMPGE ||
+            opcode == IF_ICMPGT || opcode == IF_ICMPLE ||
+            opcode == IF_ACMPEQ || opcode == IF_ACMPNE ||
+            opcode == IFNULL || opcode == IFNONNULL) {
+            edges += 2;
+            if (nodeSet.contains(label)) {
+                nodes++;
+            } else {
+                nodeSet.add(label);
+                nodes += 2;
+            }
+        } else if (opcode == GOTO) {
+            edges++;
+            if (!nodeSet.contains(label)) {
+                nodes++;
+                nodeSet.add(label);
+            }
+        }
+
+        lastJumpLineCount = lineCount;
+
         super.visitJumpInsn(opcode, label);
     }
 
     @Override
     public void visitLabel(Label l) {
         labelsVisited.add(l);
+
+        if (lineCount - lastJumpLineCount > 1) {
+            edges++;
+            if (!nodeSet.contains(l)) {
+                nodes++;
+                nodeSet.add(l);
+            }
+        }
+
         super.visitLabel(l);
     }
 }
