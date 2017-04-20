@@ -60,12 +60,12 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         System.out.println("      \"lines\": " + lineCount + ",");                // Number of lines
         System.out.println("      \"operators\": " + numOperators + ",");         // Number of operators
         System.out.println("      \"operands\": " + numOperands + ",");           // Number of operands
-        System.out.println("      \"lth\": " + LTH() + ",");                      // Halstead LTH
-        System.out.println("      \"voc\": " + VOC() + ",");                      // Halstead VOC
-        System.out.println("      \"dif\": " + DIF() + ",");                      // Halstead DIF
-        System.out.println("      \"vol\": " + VOL() + ",");                      // Halstead VOL
-        System.out.println("      \"eff\": " + EFF() + ",");                      // Halstead EFF
-        System.out.println("      \"bug\": " + VOL()/3000.0 + ",");               // Halstead BUG
+        System.out.println("      \"lth\": " + checkNaN(LTH()) + ",");            // Halstead LTH
+        System.out.println("      \"voc\": " + checkNaN(VOC()) + ",");            // Halstead VOC
+        System.out.println("      \"dif\": " + checkNaN(DIF()) + ",");            // Halstead DIF
+        System.out.println("      \"vol\": " + checkNaN(VOL()) + ",");            // Halstead VOL
+        System.out.println("      \"eff\": " + checkNaN(EFF()) + ",");            // Halstead EFF
+        System.out.println("      \"bug\": " + checkNaN(VOL()/3000.0) + ",");     // Halstead BUG
         System.out.println("      \"complexity\": " + (edges - nodes + 2) + ","); // McCabes cyclomatic Complexity
         System.out.println("      \"loops\": " + numLoops + ",");                 // Number of loops
         System.out.println("      \"casts\": " + numCasts + ",");                 // Number of casts
@@ -76,7 +76,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         for (String method:localMethodsCalled) {
             if (atLeastOne)
                 System.out.print(", ");
-            System.out.print("\"" + method+ "\"");
+            System.out.print("\"" + prettyPrint(method) + "\"");
             atLeastOne = true;
         }
         System.out.print("],\n");
@@ -86,7 +86,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         for (String method:exterMethodsCalled) {
             if (atLeastOne)
                 System.out.print(", ");
-            System.out.print("\"" + method+ "\"");
+            System.out.print("\"" + prettyPrint(method) + "\"");
             atLeastOne = true;
         }
         System.out.print("],\n");
@@ -115,11 +115,82 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         super.visitEnd();
     }
 
+    private String parseType (String asmType) {
+        String type = asmType;
+        int numArrays = 0;
+
+        switch (type.toUpperCase().charAt(0)) {
+            case 'Z': return "boolean";
+            case 'C': return "char";
+            case 'B': return "byte";
+            case 'S': return "short";
+            case 'I': return "int";
+            case 'F': return "float";
+            case 'J': return "long";
+            case 'D': return "double";
+            case 'V': return "void";
+            case '[':
+                return parseType(type.substring(1)) + "[]";
+            case 'L':
+                return type.substring(1, type.length() - 1);
+        }
+
+        return "";
+    }
+
+    private String prettyPrint (String asmSignature) {
+        String returnType = "";
+        String methodName = "";
+        String parameters = "";
+
+        String asmParameters = "";
+
+        int indexOfOpenParenthesis = asmSignature.indexOf("(");
+        int indexOfCloseParenthesis = asmSignature.indexOf(")");
+
+        boolean atLeastOne = false;
+
+        methodName = asmSignature.substring(0, indexOfOpenParenthesis);
+        returnType = parseType(asmSignature.substring(indexOfCloseParenthesis + 1));
+        asmParameters = asmSignature.substring(indexOfOpenParenthesis + 1, indexOfCloseParenthesis);
+
+        while (asmParameters.length() > 0) {
+            switch (asmParameters.toUpperCase().charAt(0)) {
+                case 'Z':
+                case 'C':
+                case 'B':
+                case 'S':
+                case 'I':
+                case 'F':
+                case 'J':
+                case 'D':
+                case 'V':
+                    if (atLeastOne) parameters += ", ";
+                    parameters += parseType(asmParameters.toUpperCase().substring(0, 1));
+                    asmParameters = asmParameters.substring(1);
+                    atLeastOne = true;
+                    break;
+                case 'L':
+                case '[':
+                    if (atLeastOne) parameters += ", ";
+                    parameters += parseType(asmParameters.substring(0, asmParameters.indexOf(";") + 1));
+                    asmParameters = asmParameters.substring(asmParameters.indexOf(";") + 1);
+                    atLeastOne = true;
+                    break;
+                default:
+                    asmParameters = asmParameters.substring(1);
+            }
+        }
+
+        return returnType + " " + methodName + "(" + parameters + ")";
+    }
+
     public double LTH () { return numOperands + numOperators; }
     public double VOC () { return operators.size() + varReferences.size(); }
     public double DIF () { return operators.size()/2.0 * (double)numOperands/varReferences.size(); }
     public double VOL () { return LTH() * (Math.log(VOC())/Math.log(2)); }
     public double EFF () { return DIF() * VOL(); }
+    public String checkNaN (double value) { return Double.isNaN(value) ? "\"NaN\"" : Double.toString(value); }
 
     @Override
     public void visitLineNumber(int line, Label start) {
