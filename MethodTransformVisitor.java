@@ -106,7 +106,7 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         for (String classRef:classReferenced) {
             if (atLeastOne)
                 System.out.print(", ");
-            System.out.print("\"" + classRef + "\"");
+            System.out.print("\"" + parseType(classRef) + "\"");
             atLeastOne = true;
         }
         System.out.print("]\n");
@@ -138,21 +138,10 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
         return "";
     }
 
-    private String prettyPrint (String asmSignature) {
-        String returnType = "";
-        String methodName = "";
-        String parameters = "";
-
-        String asmParameters = "";
-
-        int indexOfOpenParenthesis = asmSignature.indexOf("(");
-        int indexOfCloseParenthesis = asmSignature.indexOf(")");
-
+    private String buildParameters (String asmParameters) {
         boolean atLeastOne = false;
-
-        methodName = asmSignature.substring(0, indexOfOpenParenthesis);
-        returnType = parseType(asmSignature.substring(indexOfCloseParenthesis + 1));
-        asmParameters = asmSignature.substring(indexOfOpenParenthesis + 1, indexOfCloseParenthesis);
+        String parameters = "";
+        int nextChar = 1;
 
         while (asmParameters.length() > 0) {
             switch (asmParameters.toUpperCase().charAt(0)) {
@@ -166,21 +155,53 @@ class MethodTransformVisitor extends MethodVisitor implements Opcodes {
                 case 'D':
                 case 'V':
                     if (atLeastOne) parameters += ", ";
-                    parameters += parseType(asmParameters.toUpperCase().substring(0, 1));
+                    parameters += parseType(asmParameters.substring(0, 1));
                     asmParameters = asmParameters.substring(1);
                     atLeastOne = true;
                     break;
                 case 'L':
-                case '[':
                     if (atLeastOne) parameters += ", ";
                     parameters += parseType(asmParameters.substring(0, asmParameters.indexOf(";") + 1));
                     asmParameters = asmParameters.substring(asmParameters.indexOf(";") + 1);
+                    atLeastOne = true;
+                    break;
+                case '[':
+                    nextChar = 1;
+                    if (atLeastOne) parameters += ", ";
+                    while (asmParameters.charAt(nextChar) == '[')
+                        nextChar++;
+                    if (asmParameters.charAt(nextChar) == 'L') {
+                        parameters += parseType(asmParameters.substring(0, asmParameters.indexOf(";") + 1));
+                        asmParameters = asmParameters.substring(asmParameters.indexOf(";") + 1);
+                    } else {
+                        parameters += parseType(asmParameters.substring(0, nextChar + 1));
+                        asmParameters = asmParameters.substring(nextChar + 1);
+                    }
+
                     atLeastOne = true;
                     break;
                 default:
                     asmParameters = asmParameters.substring(1);
             }
         }
+
+        return parameters;
+    }
+
+    private String prettyPrint (String asmSignature) {
+        String returnType = "";
+        String methodName = "";
+        String parameters = "";
+
+        String asmParameters = "";
+
+        int indexOfOpenParenthesis = asmSignature.indexOf("(");
+        int indexOfCloseParenthesis = asmSignature.indexOf(")");
+
+        methodName = asmSignature.substring(0, indexOfOpenParenthesis);
+        returnType = parseType(asmSignature.substring(indexOfCloseParenthesis + 1));
+        asmParameters = asmSignature.substring(indexOfOpenParenthesis + 1, indexOfCloseParenthesis);
+        parameters = buildParameters(asmParameters);
 
         return returnType + " " + methodName + "(" + parameters + ")";
     }
